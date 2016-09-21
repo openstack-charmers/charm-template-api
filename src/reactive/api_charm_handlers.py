@@ -17,9 +17,25 @@ import charms.reactive as reactive
 
 # This charm's library contains all of the handler code associated with
 # sdn_charm
-import charm.openstack.$charm_lib as $charm_lib  # noqa
+import charm.openstack.{{ charm_lib }} as {{ charm_lib }}  # noqa
 
 charm.use_defaults(
     'charm.installed',
+    'amqp.connected',
+    'shared-db.connected',
+    'identity-service.connected',
+    'identity-service.available',  # enables SSL support
     'config.changed',
     'update-status')
+
+@reactive.when('shared-db.available')
+@reactive.when('identity-service.available')
+@reactive.when('amqp.available')
+def render_config(*args):
+    """Render the configuration for charm when all the interfaces are
+    available.
+    """
+    with charm.provide_charm_instance() as charm_class:
+        charm_class.render_with_interfaces(args)
+        charm_class.assess_status()
+

@@ -1,4 +1,4 @@
-includes: ['layer:openstack', 'interface:neutron-plugin']
+includes: ['layer:openstack-api']
 options:
   basic:
     use_venv: True
