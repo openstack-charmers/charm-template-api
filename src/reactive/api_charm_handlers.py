@@ -39,3 +39,9 @@ def render_config(*args):
         charm_class.render_with_interfaces(args)
         charm_class.assess_status()
 
+# db_sync checks if sync has been done so rerunning is a noop
+@reactive.when('config.rendered')
+def init_db():
+    with charm.provide_charm_instance() as charm_class:
+        charm_class.db_sync()
+
