@@ -1,3 +1,4 @@
+import collections
 import socket
 import subprocess
 
@@ -38,6 +39,16 @@ class {{ charm_class }}(charms_openstack.charm.HAOpenStackCharm):
     restart_map = {{ restart_map }}
 
     ha_resources = ['vips', 'haproxy']
+
+    release_pkg = '{{ metadata.package }}-common'
+
+    package_codenames = {
+        '{{ metadata.package }}-common': collections.OrderedDict([
+            ('2', 'mitaka'),
+            ('3', 'newton'),
+            ('4', 'ocata'),
+        ]),
+    }
 
 {% if db_sync_commands|length > 1 %}
 
