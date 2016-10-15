@@ -47,4 +47,9 @@ def init_db():
     with charm.provide_charm_instance() as charm_class:
         charm_class.db_sync()
 
-
+@reactive.when('ha.connected')
+def cluster_connected(hacluster):
+    """Configure HA resources in corosync"""
+    with charm.provide_charm_instance() as charm_class:
+        charm_class.configure_ha_resources(hacluster)
+        charm_class.assess_status()
