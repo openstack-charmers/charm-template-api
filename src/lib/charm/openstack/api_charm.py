@@ -19,7 +19,7 @@ class {{ charm_class }}(charms_openstack.charm.HAOpenStackCharm):
     release = '{{ release }}'
 
     # List of packages to install for this charm
-    packages = {{ packages }}
+    packages = {{ all_packages }}
 
     api_ports = {
         '{{ api_service }}': {
@@ -36,7 +36,12 @@ class {{ charm_class }}(charms_openstack.charm.HAOpenStackCharm):
     # Note that the hsm interface is optional - defined in config.yaml
     required_relations = ['shared-db', 'amqp', 'identity-service']
 
-    restart_map = {{ restart_map }}
+#    restart_map = {{ restart_map }}
+    restart_map = {
+{% for sconf in restart_configs %}
+        '{{ sconf }}': services,
+{%- endfor %}
+    }
 
     ha_resources = ['vips', 'haproxy']
 
@@ -50,7 +55,8 @@ class {{ charm_class }}(charms_openstack.charm.HAOpenStackCharm):
         ]),
     }
 
-{% if db_sync_commands|length > 1 %}
+# LY {{ db_manage_cmds|length }}
+{% if db_manage_cmds|length > 1 %}
 
     def db_sync(self):
         """Perform a database sync using the command defined in the
@@ -58,7 +64,7 @@ class {{ charm_class }}(charms_openstack.charm.HAOpenStackCharm):
         restarted after the database sync.
         """
         if not self.db_sync_done() and hookenv.is_leader():
-{% for cmd in db_sync_commands %}
+{% for cmd in db_manage_cmds %}
             subprocess.check_call({{ cmd }})
 {% endfor %}    
             hookenv.leader_set({'db-sync-done': True})
@@ -66,7 +72,7 @@ class {{ charm_class }}(charms_openstack.charm.HAOpenStackCharm):
             # render_domain_config needs a working system
             self.restart_all()
 {%- else %}
-    sync_cmd = {{ db_sync_command }}
+    sync_cmd = {{ db_manage_cmd }}
 {%- endif %}
 
     def get_amqp_credentials(self):
