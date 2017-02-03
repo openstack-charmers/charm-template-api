@@ -36,7 +36,6 @@ class {{ charm_class }}(charms_openstack.charm.HAOpenStackCharm):
     # Note that the hsm interface is optional - defined in config.yaml
     required_relations = ['shared-db', 'amqp', 'identity-service']
 
-#    restart_map = {{ restart_map }}
     restart_map = {
 {% for sconf in restart_configs %}
         '{{ sconf }}': services,
