@@ -55,7 +55,6 @@ class {{ charm_class }}(charms_openstack.charm.HAOpenStackCharm):
         ]),
     }
 
-# LY {{ db_manage_cmds|length }}
 {% if db_manage_cmds|length > 1 %}
 
     def db_sync(self):
