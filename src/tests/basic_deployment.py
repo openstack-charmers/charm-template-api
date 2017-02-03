@@ -26,12 +26,12 @@ import charmhelpers.contrib.openstack.amulet.utils as os_amulet_utils
 u = os_amulet_utils.OpenStackAmuletUtils(os_amulet_utils.DEBUG)
 
 
-class SDNCharmDeployment(amulet_deployment.OpenStackAmuletDeployment):
-    """Amulet tests on a basic sdn_charm deployment."""
+class {{ charm_class }}Deployment(amulet_deployment.OpenStackAmuletDeployment):
+    """Amulet tests on a basic {{ metadata.package }} deployment."""
 
     def __init__(self, series, openstack=None, source=None, stable=False):
         """Deploy the entire test environment."""
-        super(SDNCharmDeployment, self).__init__(series, openstack,
+        super({{ charm_class }}Deployment, self).__init__(series, openstack,
                                                        source, stable)
         self._add_services()
         self._add_relations()
@@ -47,67 +47,35 @@ class SDNCharmDeployment(amulet_deployment.OpenStackAmuletDeployment):
     def _add_services(self):
         """Add services
 
-           Add the services that we're testing, where sdn_charm is local,
+           Add the services that we're testing, where {{ metadata.package }} is local,
            and the rest of the service are from lp branches that are
            compatible with the local charm (e.g. stable or next).
            """
-        this_service = {'name': 'sdn_charm'}
+        this_service = {'name': '{{ metadata.package }}'}
         other_services = [
-            {
-                'name': 'nova-compute',
-                'constraints': {'mem': '4G'},
-            },
-            {
-                'name': 'neutron-api',
-            },
-            {
-                'name': 'neutron-gateway',
-            },
             {'name': 'mysql'},
             {'name': 'rabbitmq-server'},
             {'name': 'keystone'},
-            {'name': 'nova-cloud-controller'},
-            {'name': 'glance'},
         ]
-        super(SDNCharmDeployment, self)._add_services(this_service,
+        super({{ charm_class }}Deployment, self)._add_services(this_service,
                                                       other_services)
 
     def _add_relations(self):
         """Add all of the relations for the services."""
         relations = {
-            'nova-compute:neutron-plugin': 'sdn_charm:neutron-plugin',
             'keystone:shared-db': 'mysql:shared-db',
-            'nova-cloud-controller:shared-db': 'mysql:shared-db',
-            'nova-cloud-controller:amqp': 'rabbitmq-server:amqp',
-            'nova-cloud-controller:image-service': 'glance:image-service',
-            'nova-cloud-controller:identity-service':
-            'keystone:identity-service',
-            'nova-compute:cloud-compute':
-            'nova-cloud-controller:cloud-compute',
-            'nova-compute:amqp': 'rabbitmq-server:amqp',
-            'nova-compute:image-service': 'glance:image-service',
-            'glance:shared-db': 'mysql:shared-db',
-            'glance:identity-service': 'keystone:identity-service',
-            'glance:amqp': 'rabbitmq-server:amqp',
-            'neutron-api:shared-db': 'mysql:shared-db',
-            'neutron-api:amqp': 'rabbitmq-server:amqp',
-            'neutron-api:neutron-api': 'nova-cloud-controller:neutron-api',
-            'neutron-api:identity-service': 'keystone:identity-service',
-            'neutron-gateway:amqp': 'rabbitmq-server:amqp',
-            'neutron-gateway:neutron-plugin-api':
-            'neutron-api:neutron-plugin-api',
-            'neutron-gateway:quantum-network-service':
-            'nova-cloud-controller:quantum-network-service',
-            'neutron-gateway:juju-info': 'sdn_charm:container',
+            '{{ metadata.package }}:amqp': 'rabbitmq-server:amqp',
+            '{{ metadata.package }}:identity-service': 'keystone:identity-service',
+            '{{ metadata.package }}:shared-db': 'mysql:shared-db',
         }
-        super(SDNCharmDeployment, self)._add_relations(relations)
+        super({{ charm_class }}Deployment, self)._add_relations(relations)
 
     def _configure_services(self):
         """Configure all of the services."""
         keystone_config = {'admin-password': 'openstack',
                            'admin-token': 'ubuntutesting'}
         configs = {'keystone': keystone_config}
-        super(SDNCharmDeployment, self)._configure_services(configs)
+        super({{ charm_class }}Deployment, self)._configure_services(configs)
 
     def _get_token(self):
         return self.keystone.service_catalog.catalog['token']['id']
@@ -115,12 +83,11 @@ class SDNCharmDeployment(amulet_deployment.OpenStackAmuletDeployment):
     def _initialize_tests(self):
         """Perform final initialization before tests get run."""
         # Access the sentries for inspecting service units
-        self.sdn_charm_sentry = self.d.sentry['sdn_charm'][0]
+        self.{{ metadata.package }}_sentry = self.d.sentry['{{ metadata.package }}'][0]
         self.mysql_sentry = self.d.sentry['mysql'][0]
         self.keystone_sentry = self.d.sentry['keystone'][0]
         self.rabbitmq_sentry = self.d.sentry['rabbitmq-server'][0]
-        self.sdn_charm_svcs = [
-            'sdn_charm-agent', 'sdn_charm-api']
+        self.{{ metadata.package }}_svcs = {{ all_services }}
 
         # Authenticate admin with keystone endpoint
         self.keystone = u.authenticate_keystone_admin(self.keystone_sentry,
@@ -142,7 +109,6 @@ class SDNCharmDeployment(amulet_deployment.OpenStackAmuletDeployment):
     def _run_action(self, unit_id, action, *args):
         command = ["juju", "action", "do", "--format=json", unit_id, action]
         command.extend(args)
-        print("Running command: %s\n" % " ".join(command))
         output = subprocess.check_output(command)
         output_json = output.decode(encoding="UTF-8")
         data = json.loads(output_json)
@@ -171,7 +137,7 @@ class SDNCharmDeployment(amulet_deployment.OpenStackAmuletDeployment):
         u.log.debug('Checking system services on units...')
 
         service_names = {
-            self.sdn_charm_sentry: self.sdn_charm_svcs,
+            self.{{ metadata.package }}_sentry: self.{{ metadata.package }}_svcs,
         }
 
         ret = u.validate_services_by_name(service_names)
