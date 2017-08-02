@@ -16,10 +16,10 @@
 
 """Amulet tests on a basic SDN Charm deployment on trusty-liberty."""
 
-from basic_deployment import SDNCharmDeployment
+from basic_deployment import {{ charm_class }}Deployment
 
 if __name__ == '__main__':
-    deployment = SDNCharmDeployment(series='trusty',
+    deployment = {{ charm_class }}Deployment(series='trusty',
                                     openstack='cloud:trusty-liberty',
                                     source='cloud:trusty-updates/liberty')
     deployment.run_tests()
